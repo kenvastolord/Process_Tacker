@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import subprocess
@@ -28,3 +29,26 @@ def get_active_processes():
     except Exception as e:
         logging.error(f"Exception occurred while retrieving processes: {str(e)}")
         return []
+
+
+def export_processes_to_json(processes, filename="data/processes.json"):
+    try:
+        processes_list = []
+        for process in processes:
+            process_details = process.split()
+            process_dic = {
+                "USER": process_details[0],
+                "PID": process_details[1],
+                "CPU": process_details[2],
+                "MEM": process_details[3],
+                "COMMAND": " ".join(process_details[10:]),
+            }
+            processes_list.append(process_dic)
+
+        with open(filename, "a") as json_file:
+            json.dump(processes_list, json_file, indent=2)
+
+        logging.info(f"Processes data successfully exported to {filename}")
+
+    except Exception as e:
+        logging.error(f"Error exporting process data to JSON: {str(e)}")
