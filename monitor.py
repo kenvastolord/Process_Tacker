@@ -14,7 +14,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
-logging.info("Starting logger successfully... ")
+print("Starting process monitor...")
+logging.info(" Logger started successfully... ")
 
 
 def get_active_processes():
@@ -45,10 +46,21 @@ def export_processes_to_json(processes, filename="data/processes.json"):
             }
             processes_list.append(process_dic)
 
+        data_dir = os.path.dirname(filename)
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+
         with open(filename, "a") as json_file:
             json.dump(processes_list, json_file, indent=2)
 
+        print("Export completed successfully.")
         logging.info(f"Processes data successfully exported to {filename}")
 
     except Exception as e:
+        print("An error occurred while exporting the process data. Check the logs.")
         logging.error(f"Error exporting process data to JSON: {str(e)}")
+
+
+if __name__ == "__main__":
+    processes = get_active_processes()
+    export_processes_to_json(processes)
