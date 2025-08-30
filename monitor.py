@@ -23,20 +23,45 @@ def get_active_processes():
         result = subprocess.run(
             ["ps", "aux"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
-        if result.returncode != 0:
-            logging.error(f"Error getting processes: {result.stderr}")
+        output = result.stdout.strip()
+
+        if not output:
+            print("Warning: 'ps aux' returned no data. ")
+            logging.warning("No output received from 'ps aux'. ")
             return []
-        return result.stdout.splitlines()
+
+        return output.splitlines()
+
+    except subprocess.CalledProcessError as e:
+        logging.error(f"'ps aux' command failed with code {e.returncode}: {e.stderr}")
+        print("Error: Failed to retrieve process list. Check logs.")
+        return []
+
+    except FileNotFoundError:
+        logging.error("The 'ps' command is not found on this system.")
+        print("Error: 'ps' command not available")
+        return []
+
     except Exception as e:
-        logging.error(f"Exception occurred while retrieving processes: {str(e)}")
+        logging.error(f"Unexpected error while retrieving processes: {str(e)}")
+        print("An unexpected error occurred while retrieving processes.")
         return []
 
 
 def export_processes_to_json(processes, filename="data/processes.json"):
     try:
-        processes_list = []
-        for process in processes:
+        if not processes:
+            print("Warning: No processes to export")
+            logging.warning("No processes to export")
+
+        process_list = []
+        for process in processes[1:]:
             process_details = process.split()
+
+            if len(process_details) < 11:
+                logging.warning("Skip a malformed process line.")
+                continue
+
             process_dic = {
                 "USER": process_details[0],
                 "PID": process_details[1],
@@ -44,21 +69,33 @@ def export_processes_to_json(processes, filename="data/processes.json"):
                 "MEM": process_details[3],
                 "COMMAND": " ".join(process_details[10:]),
             }
-            processes_list.append(process_dic)
+            process_list.append(process_dic)
+
+        if not process_list:
+            logging.warning("No valid processes to export after parsing.")
+            print("Warning: No valid processes to export.")
+            return
 
         data_dir = os.path.dirname(filename)
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
         with open(filename, "a") as json_file:
-            json.dump(processes_list, json_file, indent=2)
+            json.dump(process_list, json_file, indent=2)
 
         print("Export completed successfully.")
-        logging.info(f"Processes data successfully exported to {filename}")
+        logging.info(f"Process data successfully exported to {filename}")
+
+    except PermissionError:
+        logging.error(f"Permission denieded: cannot write to {filename}")
+        print(f"Error: cannot write to {filename} (permission denieded)")
 
     except Exception as e:
         print("An error occurred while exporting the process data. Check the logs.")
         logging.error(f"Error exporting process data to JSON: {str(e)}")
+
+    finally:
+        print("Export function finished.")
 
 
 if __name__ == "__main__":
