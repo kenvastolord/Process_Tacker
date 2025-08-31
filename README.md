@@ -25,6 +25,10 @@ ProcessTracker/
 
 ```
 
+## 🖥️ Demo
+
+![Demo of Process Monitor](media/ProcessTracker.gif)
+
 
 ## ⚙️ Requirements
 
